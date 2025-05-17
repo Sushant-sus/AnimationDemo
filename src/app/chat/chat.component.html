@@ -1,0 +1,22 @@
+<div class="chat-container">
+  <div
+    *ngFor="let qa of displayedQA; let i = index"
+    #qaBlock
+    class="qa-block"
+    [@slideIn]
+  >
+    <div class="question-box">
+      <p>{{ qa.question }}</p>
+    </div>
+    <div class="answer-container">
+      <span class="chat-icon"><i class="fas fa-comment-dots"></i></span>
+      <span class="answer-text">{{ qa.displayedAnswer }}</span>
+    </div>
+  </div>
+
+  <app-timer
+  *ngIf="showTimer"
+  class="fixed bottom-4 right-4 w-[40px] h-[40px] z-50"
+  (timerCompleted)="onTimerCompleted()"
+/>
+</div>

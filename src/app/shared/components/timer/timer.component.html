@@ -1,0 +1,26 @@
+<div class="loader-container">
+  <div class="loader-bg">
+    <div class="circular-loader">
+      <svg viewBox="0 0 60 60" preserveAspectRatio="xMidYMid meet">
+        <!-- Background circle -->
+        <circle 
+          class="loader-bg-path" 
+          cx="30" 
+          cy="30" 
+          r="25">
+        </circle>
+        <!-- Progress circle -->
+        <circle 
+          class="loader-path" 
+          cx="30" 
+          cy="30" 
+          r="25"
+          [style.strokeDasharray]="circumference"
+          [style.strokeDashoffset]="dashoffset">
+        </circle>
+      </svg>
+      <div class="countdown-number">{{ displayTime }}</div>
+    </div>
+  </div>
+  <!-- <button class="restart-button" (click)="restartTimer()">Restart</button> -->
+</div>

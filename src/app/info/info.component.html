@@ -1,0 +1,27 @@
+<div class="wrapper relative">
+  <app-loader *ngIf="isLoading"></app-loader>
+  <div class="container">
+    <div class="content">
+      <div class="w-full flex items-start mb-4">
+        <img [src]="headerImage" alt="Header Logo" class="w-[60px] h-[60px]" />
+      </div>
+
+      <h1 class="header-text">
+        <span [innerHTML]="text"></span>
+      </h1>
+
+      <h1 class="header-text">
+        <span class="typewriter">
+          {{ displayedText }}<span class="cursor">|</span>
+        </span>
+      </h1>
+    </div>
+  </div>
+
+  <app-timer
+    *ngIf="showTimer"
+    class="fixed bottom-4 right-4 w-[40px] h-[40px] z-50"
+    (timerCompleted)="onTimerComplete()"
+  ></app-timer>
+</div>
+ 

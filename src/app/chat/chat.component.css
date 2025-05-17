@@ -1,0 +1,86 @@
+.chat-container {
+  background-color: #FF004C;
+  height: 100vh;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scroll-behavior: smooth;
+}
+
+.chat-container::-webkit-scrollbar {
+  display: none;
+}
+
+.qa-block {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Questions aligned right */
+.question-box {
+  background-color: #ffffff;
+  border: 2px solid #ff0000;
+  border-radius: 10px;
+  padding: 15px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: #000000;
+  max-width: 90%;
+  width: fit-content;
+  margin-left: auto;
+}
+
+/* Answers aligned left */
+.answer-container {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  color: #ffe747;
+  font-size: 18px;
+  line-height: 1.5;
+  max-width: 90%;
+  width: fit-content;
+  margin-right: auto;
+}
+
+.chat-icon {
+  color: #ffe747;
+  font-size: 22px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.bullet {
+  color: #ffe747;
+  font-size: 24px;
+  padding-top: 2px;
+}
+
+.answer-text {
+  white-space: pre-wrap;
+}
+
+/* Larger screen padding */
+@media (min-width: 768px) {
+  .chat-container {
+    padding: 20px 60px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .chat-container {
+    padding: 20px 150px;
+  }
+
+  .question-box,
+  .answer-container {
+    max-width: 600px;
+  }
+}
