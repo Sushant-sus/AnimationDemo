@@ -1,137 +1,209 @@
 import {
   Component,
-  OnInit,
   ViewChildren,
   QueryList,
   ElementRef,
   AfterViewInit,
-  EventEmitter,
+  ChangeDetectionStrategy,
+  signal,
+  Input,
+  Signal,
   Output,
+  EventEmitter,
+  ChangeDetectorRef,
+  ViewChild,
 } from '@angular/core';
-import { ApiService } from '../services/api.service';
-import { CommonModule } from '@angular/common';
 import { trigger, transition, style, animate } from '@angular/animations';
-import { TimerComponent } from "../shared/components/timer/timer.component";
+import { TimerComponent } from '../shared/components/timer/timer.component';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, TimerComponent],
+  imports: [TimerComponent],
   templateUrl: './chat.component.html',
-  styleUrl: './chat.component.css',
+  styleUrls: ['./chat.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
     trigger('slideIn', [
       transition(':enter', [
         style({ transform: 'translateX(100%)', opacity: 0 }),
-        animate('400ms ease-out', style({ transform: 'translateX(0)', opacity: 1 }))
-      ])
-    ])
-  ]
+        animate(
+          '400ms ease-out',
+          style({ transform: 'translateX(0)', opacity: 1 })
+        ),
+      ]),
+    ]),
+  ],
 })
-
-export class ChatComponent implements OnInit, AfterViewInit {
-  @Output() timerDone = new EventEmitter<void>();
-
-  questions: any[] = [];
-  currentIndex = 0;
-  firstAnswerTyped = false;
-  showTimer = false;
-
-  displayedQA: {
-    question: string;
-    answer: string;
-    displayedAnswer: string;
-    charIndex: number;
-  }[] = [];
-
+export class ChatComponent implements AfterViewInit {
+  @Input() data!: Signal<any | null>;
+  @Input() isLoading!: Signal<boolean>;
+  @Output() timerDone = new EventEmitter();
   @ViewChildren('qaBlock') qaBlocks!: QueryList<ElementRef>;
+  @ViewChild('chatContainer') chatContainer!: ElementRef;
 
-  constructor(private globalService: ApiService) {}
+  // Signals for reactive state
+  questions = signal<any[]>([]);
+  currentIndex = signal(0);
+  displayedQA = signal<
+    {
+      question: string;
+      answer: string;
+      displayedAnswer: string;
+      charIndex: number;
+    }[]
+  >([]);
+  firstAnswerTyped = signal(false);
+  showTimer = signal(false);
+
+  private checkpointIndex = signal<number | null>(null);
+  private scrollHandler: (() => void) | null = null;
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    // this.questions = [
-    //     {
-    //         "answer": "Probably geese. They've already got the attitude, the loud honking, and the territorial rage. If they could talk, they'd probably be yelling profanities at anyone who even looked in their direction.",
-    //         "question": "If animals could talk, which species would be the rudest of them all?"
-    //     },
-    //     {
-    //         "answer": "Assuming the blender isn't turned on, I'd wedge the pencil-sized me between the blades and the side, then start climbing like a tiny ninja using the grooves and edges for grip. Hopefully, I'd MacGyver my way out before someone decides it's smoothie time.",
-    //         "question": "If you were suddenly shrunk to the size of a pencil and dropped into a blender, how would you get out?"
-    //     }
-    // ];
-    // this.displayNextQA();
+    const value = this.data?.();
+    if (value && !this.isLoading()) {
+      this.questions.set(value.questions || []);
+      this.currentIndex.set(0);
+      this.displayedQA.set([]);
+      this.firstAnswerTyped.set(false);
 
-    this.globalService.getAssistantData().subscribe((data) => {
-      this.questions = data.questions;
-      this.displayNextQA();
-    });
+      if (this.questions().length > 0) {
+        this.displayNextQA();
+        this.checkpointIndex.set(this.questions().length - 1);
+      }
+      this.cdr.markForCheck();
+    }
   }
 
   ngAfterViewInit(): void {
-    this.qaBlocks.changes.subscribe(() => this.scrollToCurrentQA());
+    setTimeout(() => {
+      this.qaBlocks.changes.subscribe(() => {
+        this.scrollToCurrentQA();
+        this.cdr.markForCheck();
+      });
+      this.setupScrollListener();
+      this.scrollToCurrentQA();
+    }, 2000);
   }
 
-  displayNextQA(): void {
-    if (this.currentIndex >= this.questions.length) return;
+  ngOnDestroy(): void {
+    if (this.scrollHandler && this.chatContainer) {
+      this.chatContainer.nativeElement.removeEventListener(
+        'scroll',
+        this.scrollHandler
+      );
+    }
+  }
 
-    const qa = {
-      question: this.questions[this.currentIndex].question,
-      answer: this.questions[this.currentIndex].answer,
+  private setupScrollListener() {
+    const container = this.chatContainer.nativeElement;
+    this.scrollHandler = () => {
+      const checkpointIdx = this.checkpointIndex();
+      if (checkpointIdx === null) return;
+
+      const blocks = this.qaBlocks.toArray();
+      if (checkpointIdx >= blocks.length) return;
+
+      const checkpointBlock = blocks[checkpointIdx].nativeElement;
+      const checkpointTop = checkpointBlock.offsetTop;
+      const containerTop = container.scrollTop;
+
+      if (containerTop > checkpointTop) {
+        container.scrollTop = checkpointTop;
+      }
+    };
+    container.addEventListener('scroll', this.scrollHandler);
+  }
+
+  displayNextQA() {
+    const index = this.currentIndex();
+    const qs = this.questions();
+    if (index >= qs.length) return;
+
+    const nextQA = qs[index];
+    const newQA = {
+      question: nextQA.question,
+      answer: nextQA.answer,
       displayedAnswer: '',
       charIndex: 0,
     };
-    this.displayedQA.push(qa);
-    this.typeAnswer(qa);
-  }
 
-  typeAnswer(qa: any): void {
-  if (qa.charIndex < qa.answer.length) {
-    qa.displayedAnswer += qa.answer[qa.charIndex++];
-    setTimeout(() => this.typeAnswer(qa), 40);
-  } else {
-    // Scroll after first full answer
-    if (this.currentIndex === 0) {
-      this.firstAnswerTyped = true;
-    }
+    const showQA = () => {
+      this.displayedQA.update((prev) => [...prev, newQA]);
+      this.typeAnswer(newQA, this.displayedQA().length - 1);
+      this.cdr.markForCheck();
+    };
 
-    this.currentIndex++;
-
-    if (this.currentIndex < this.questions.length) {
-      setTimeout(() => this.displayNextQA(), 800);
-    } else { 
-      setTimeout(() => {
-        this.showTimer = true;
-      }, 0);
+    if (index === 0) {
+      setTimeout(showQA, 2000); // 2 second delay for the first question
+    } else {
+      showQA();
     }
   }
-}
+
+  typeAnswer(qa: any, qaIndex: number) {
+    if (qa.charIndex < qa.answer.length) {
+      qa.displayedAnswer += qa.answer[qa.charIndex++];
+      this.updateDisplayedQA(qaIndex, qa);
+      requestAnimationFrame(() => this.typeAnswer(qa, qaIndex));
+      this.cdr.markForCheck();
+    } else {
+      if (this.currentIndex() === 0) {
+        this.firstAnswerTyped.set(true);
+      }
+      this.currentIndex.update((v) => v + 1);
+      const nextIndex = this.currentIndex();
+      if (nextIndex < this.questions().length) {
+        this.displayNextQA();
+      } else {
+        this.showTimer.set(true);
+      }
+      this.cdr.markForCheck();
+    }
+  }
+
+  private updateDisplayedQA(index: number, qa: any) {
+    this.displayedQA.update((list) => {
+      const copy = [...list];
+      copy[index] = { ...qa };
+      return copy;
+    });
+    this.cdr.markForCheck();
+  }
+
+  onTimerCompleted(): void {
+    this.timerDone.emit();
+    this.cdr.markForCheck();
+  }
 
   scrollToCurrentQA(): void {
-  const lastQA = this.qaBlocks.last;
-  if (lastQA) {
-    const lastElem = lastQA.nativeElement;
-    const chatContainer = document.querySelector('.chat-container') as HTMLElement;
+    const checkpointIdx = this.checkpointIndex();
+    if (checkpointIdx === null) return;
 
-    // Clear any existing margin first
-    lastElem.style.marginBottom = '0px';
- 
-    setTimeout(() => {
-      const lastHeight = lastElem.offsetHeight;
-      const viewportHeight = window.innerHeight;
-      const extraMargin = viewportHeight - lastHeight;
+    const blocks = this.qaBlocks.toArray();
+    if (checkpointIdx >= blocks.length) return;
 
-      // Apply only if the content is shorter than the screen
-      if (extraMargin > 0) {
-        lastElem.style.marginBottom = `${extraMargin}px`;
+    const checkpointBlock = blocks[checkpointIdx].nativeElement;
+    checkpointBlock.style.marginBottom = '0px';
+
+    const startTime = performance.now();
+    const delay = () => {
+      if (performance.now() - startTime >= 100) {
+        const blockHeight = checkpointBlock.offsetHeight;
+        const viewportHeight = window.innerHeight;
+        const extraMargin = viewportHeight - blockHeight;
+
+        if (extraMargin > 0) {
+          checkpointBlock.style.marginBottom = `${extraMargin}px`;
+        }
+        checkpointBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        this.cdr.markForCheck();
+      } else {
+        requestAnimationFrame(delay);
       }
-
-      // Scroll the last element into view
-      lastElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  }
-}
-
-onTimerCompleted(): void {
-    this.timerDone.emit();
+    };
+    requestAnimationFrame(delay);
   }
 }

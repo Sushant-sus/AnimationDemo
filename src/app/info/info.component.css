@@ -13,7 +13,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  background: #FF004C;
+  background: linear-gradient(to bottom, #ff4d6d, #b40b0b);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,8 +23,7 @@
 
 .wrapper .container {
   width: 100%;
-  max-width: 1280px;
-  padding: 16px;
+  max-width: 1300px;
   text-align: center;
 }
 
@@ -34,35 +33,44 @@
   display: block;
 }
 
-/* Default font size for smallest screens */
+
 .header-text {
   color: rgb(255, 231, 71);
-  font-weight: 1000;
-  font-size: 2.5rem;
-  line-height: 1.2;
+  font-weight: 700;  
+  font-size: 4rem; 
+  line-height: 1;
   text-align: left;
   word-break: break-word;
+  padding: 0 16px;
   width: 100%;
+  -webkit-text-stroke: 0.5px rgb(255, 231, 71);
 }
 
-/* Medium screens (tablets) */
+/* Small screens (up to 639px) */
+@media (max-width: 639px) {
+  .header-text {
+    font-size: 3rem;
+    font-weight: 600;
+    -webkit-text-stroke: 0.3px rgb(255, 231, 71);
+  }
+}
+
 @media (min-width: 640px) {
   .header-text {
-    font-size: 4rem;
+    font-size: 5rem;
+    font-weight: 800;
+    -webkit-text-stroke: 0.7px rgb(255, 231, 71);
+    padding: 0 32px;
   }
 }
 
-/* Large screens (desktops) */
+/* Desktop (≥ 1024px) */
 @media (min-width: 1024px) {
   .header-text {
-    font-size: 6rem;
-  }
-}
-
-/* Extra large screens */
-@media (min-width: 1440px) {
-  .header-text {
-    font-size: 8rem;
+    font-size: 7rem;
+    font-weight: 900;
+    -webkit-text-stroke: 1px rgb(255, 231, 71);
+    padding: 0 64px;
   }
 }
 
@@ -87,10 +95,13 @@
 }
 
 @keyframes blink {
-  0%, 50%, 100% {
+  0%,
+  50%,
+  100% {
     opacity: 1;
   }
-  25%, 75% {
+  25%,
+  75% {
     opacity: 0;
   }
 }

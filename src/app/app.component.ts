@@ -1,59 +1,72 @@
-import { Component, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { InfoComponent } from './info/info.component';
 import { ChatComponent } from './chat/chat.component';
-import { CommonModule } from '@angular/common';
 import { animate, style, transition, trigger } from '@angular/animations';
+import { ApiService } from './services/api.service';
+import { LoaderComponent } from "./shared/components/loader/loader.component";
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, InfoComponent, ChatComponent],
+  imports: [InfoComponent, ChatComponent, LoaderComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
     trigger('Slide', [
       transition(':enter', [
-        style({ transform: 'translateX(100%)'}),
-        animate(
-          '0.6s ease-in-out',
-          style({ transform: 'translateX(0)'})
-        ),
+        style({ transform: 'translateX(100%)' }),
+        animate('0.6s ease-in-out', style({ transform: 'translateX(0)' })),
       ]),
       transition(':leave', [
-        animate(
-          '0.6s ease-in-out',
-          style({ transform: 'translateX(-100%)'})
-        ),
+        animate('0.6s ease-in-out', style({ transform: 'translateX(-100%)' })),
       ]),
     ]),
   ],
 })
+export class AppComponent implements OnInit {
+  title(title: any) {
+    throw new Error('Method not implemented.');
+  }
+  showInfo = signal(true);
+  showChat = signal(false);
+  transitioning = signal(false);
 
-export class AppComponent {
-  showInfo = true;
-  showChat = false;
-  transitioning = false;
+  private _assistantData = signal<any | null>(null);
+  private _isLoading = signal(true);
+
+  assistantData = computed(() => this._assistantData());
+  isLoading = computed(() => this._isLoading());
+
+  constructor(private apiService: ApiService) {}
+
+  ngOnInit() {
+    this.apiService.getAssistantData().subscribe((data) => {
+      this._assistantData.set(data);
+      this._isLoading.set(false);
+    });
+  }
 
   onTimerDone() {
-    this.transitioning = true;
+    this.transitioning.set(true);
 
-    if (this.showInfo) {
-      // Step 1: show chat over info
-      this.showChat = true;
-
-      // Step 2: hide info after animation completes
+    if (this.showInfo()) {
+      this.showChat.set(true);
       setTimeout(() => {
-        this.showInfo = false;
-        this.transitioning = false;
+        this.showInfo.set(false);
+        this.transitioning.set(false);
       }, 600);
     } else {
-      // Step 1: show info over chat
-      this.showInfo = true;
-
-      // Step 2: hide chat after animation completes
+      this.showInfo.set(true);
       setTimeout(() => {
-        this.showChat = false;
-        this.transitioning = false;
+        this.showChat.set(false);
+        this.transitioning.set(false);
       }, 600);
     }
   }

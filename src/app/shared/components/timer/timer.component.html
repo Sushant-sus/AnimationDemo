@@ -16,10 +16,10 @@
           cy="30" 
           r="25"
           [style.strokeDasharray]="circumference"
-          [style.strokeDashoffset]="dashoffset">
+          [style.strokeDashoffset]="dashoffset()">
         </circle>
       </svg>
-      <div class="countdown-number">{{ displayTime }}</div>
+      <div class="countdown-number">{{ displayTime() }}</div>
     </div>
   </div>
   <!-- <button class="restart-button" (click)="restartTimer()">Restart</button> -->

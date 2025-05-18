@@ -1,70 +1,73 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   EventEmitter,
   OnDestroy,
   OnInit,
   Output,
+  signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-timer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './timer.component.html',
   styleUrl: './timer.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimerComponent implements OnInit, OnDestroy {
-  timeLeft: number = 10; // Timer starts at 10 seconds
-  displayTime: number = 10;
-  circumference: number = 2 * Math.PI * 25; // 2πr where r=25 (circle radius)
-  dashoffset: number = 0;
-  timerInterval: any;
+  readonly totalDuration = 10;
+  readonly radius = 25;
+  readonly circumference = 2 * Math.PI * this.radius;
 
-  @Output() timerCompleted = new EventEmitter<void>(); // Emit when done
+  timeLeft = signal(this.totalDuration);
+  displayTime = signal(this.totalDuration);
+  dashoffset = signal(0);
 
-  ngOnInit(): void { 
-    this.dashoffset = 0;
- 
+  private timerInterval: any;
+
+  @Output() timerCompleted = new EventEmitter<void>();
+
+  ngOnInit(): void {
     this.startCountdown();
   }
 
   ngOnDestroy(): void {
-    // Clean up the timer when component is destroyed
     this.clearTimerInterval();
   }
 
   startCountdown(): void {
-    this.clearTimerInterval(); // Clear any existing timer
+    this.clearTimerInterval();
 
-    this.timeLeft = 10;
-    this.displayTime = 10;
-    this.dashoffset = 0;
+    this.timeLeft.set(this.totalDuration);
+    this.displayTime.set(this.totalDuration);
+    this.dashoffset.set(0);
 
     this.timerInterval = setInterval(() => {
-      // Calculate progress and update stroke-dashoffset before updating time
-      const progress = this.timeLeft / 10;
-      this.dashoffset = this.circumference * (1 - progress);
+      const currentTime = this.timeLeft();
+      const progress = currentTime / this.totalDuration;
 
-      // Update the display time
-      this.displayTime = Math.ceil(this.timeLeft);
+      this.dashoffset.set(this.circumference * (1 - progress));
+      this.displayTime.set(Math.ceil(currentTime));
 
-      // Check if time is up
-      if (this.timeLeft <= 0) {
-        this.timeLeft = 0;
-        this.displayTime = 0;
-        this.dashoffset = this.circumference;
+      if (currentTime <= 0) {
+        this.timeLeft.set(0);
+        this.displayTime.set(0);
+        this.dashoffset.set(this.circumference);
         this.clearTimerInterval();
 
-        // Show "0" briefly before emitting
         setTimeout(() => {
           this.timerCompleted.emit();
         }, 500);
       }
 
-      // Decrease time (after checking to ensure 0 is displayed)
-      this.timeLeft -= 0.1;
-    }, 100); 
+      this.timeLeft.set(currentTime - 0.1);
+    }, 100);
+  }
+
+  restartTimer(): void {
+    this.startCountdown();
   }
 
   clearTimerInterval(): void {
@@ -72,12 +75,5 @@ export class TimerComponent implements OnInit, OnDestroy {
       clearInterval(this.timerInterval);
       this.timerInterval = null;
     }
-  }
-
-  restartTimer(): void {
-    this.timeLeft = 10;
-    this.displayTime = 10;
-    this.dashoffset = 0;
-    this.startCountdown();
   }
 }

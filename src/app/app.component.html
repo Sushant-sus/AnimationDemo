@@ -1,14 +1,20 @@
-<div class="relative h-screen w-screen overflow-hidden">
+<div class="relative h-screen w-screen overflow-hidden main-container">
+  @if (isLoading()) {
+  <app-loader></app-loader>
+  } @if (!isLoading(); as loadingDone) { @if (showInfo(); as visible) {
   <app-info
-    *ngIf="showInfo"
     (timerDone)="onTimerDone()"
+    [data]="assistantData"
+    [isLoading]="isLoading"
     class="absolute top-0 left-0 w-full h-full z-10"
   ></app-info>
-
+  } } @if (showChat(); as visible) {
   <app-chat
-    *ngIf="showChat"
     (timerDone)="onTimerDone()"
+    [data]="assistantData"
+    [isLoading]="isLoading"
     @Slide
     class="absolute top-0 left-0 w-full h-full z-20"
   ></app-chat>
+  }
 </div>
