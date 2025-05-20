@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   OnInit,
   signal,
 } from '@angular/core';
@@ -9,7 +10,7 @@ import { InfoComponent } from './info/info.component';
 import { ChatComponent } from './chat/chat.component';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { ApiService } from './services/api.service';
-import { LoaderComponent } from "./shared/components/loader/loader.component";
+import { LoaderComponent } from './shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-root',
@@ -31,29 +32,22 @@ import { LoaderComponent } from "./shared/components/loader/loader.component";
   ],
 })
 export class AppComponent implements OnInit {
-  title(title: any) {
-    throw new Error('Method not implemented.');
-  }
   showInfo = signal(true);
   showChat = signal(false);
   transitioning = signal(false);
 
-  private _assistantData = signal<any | null>(null);
-  private _isLoading = signal(true);
+  readonly assistantData = signal<any | null>(null);
+  readonly isLoading = signal(true);
+  private apiService = inject(ApiService); 
 
-  assistantData = computed(() => this._assistantData());
-  isLoading = computed(() => this._isLoading());
-
-  constructor(private apiService: ApiService) {}
-
-  ngOnInit() {
+  ngOnInit(): void {
     this.apiService.getAssistantData().subscribe((data) => {
-      this._assistantData.set(data);
-      this._isLoading.set(false);
+      this.assistantData.set(data);
+      this.isLoading.set(false);
     });
   }
 
-  onTimerDone() {
+  onTimerDone(): void {
     this.transitioning.set(true);
 
     if (this.showInfo()) {
