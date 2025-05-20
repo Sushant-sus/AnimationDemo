@@ -17,5 +17,5 @@ app-chat {
 }
 
 app-chat {
-  z-index: 2; /* Ensure chat overlays info */
+  z-index: 2;
 }
