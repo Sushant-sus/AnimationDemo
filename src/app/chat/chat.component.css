@@ -6,7 +6,7 @@
     180deg,
     var(--primary-color) 0%,
     color-mix(in srgb, var(--primary-color) 80%, black) 100%
-  ); 
+  );
   height: 100vh;
   width: 100%;
 }
@@ -38,30 +38,34 @@
 
 .question-box {
   position: relative;
-  background-color: #ffffff;
-  border: 2px solid #ffffff;
-  border-radius: 6px 6px 0 6px;
-  padding: 15px;
+  --x-bg-color: var(
+    --conversation-question-bg,
+    color-mix(in srgb, var(--primary-color) 2%, black 10%)
+  );
+  background-color: var(--x-bg-color);
+  border-radius: 5px 5px 0 5px;
+  padding: 9px 15px 9px 13px;
   font-size: 18px;
   line-height: 1.5;
   color: #000000;
   max-width: 80%;
-  width: fit-content;
   margin-left: auto;
-  word-wrap: keep-all;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.question-box::after {
+.question-box::after { 
   content: "";
+  width: 0px;
+  height: 0px;
   position: absolute;
-  bottom: -1px;
-  right: -8px;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 4px 0 4px 6px;
-  border-color: transparent transparent transparent #ffffff;
-  box-shadow: -2px 0 0 #ffffff;
+  border-left: 1px solid var(--x-bg-color);
+  border-bottom: 2px solid var(--x-bg-color);
+  border-right: 2px solid transparent;
+  border-top: 1px solid transparent;
+  right: -2px;
+  bottom: 0;
+  border-radius: 0 0 1px;
 }
 
 .answer-container {
