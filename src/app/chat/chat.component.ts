@@ -4,86 +4,57 @@ import {
   QueryList,
   ElementRef,
   AfterViewInit,
+  OnInit,
+  OnDestroy,
   ChangeDetectionStrategy,
   signal,
-  Input,
-  Signal,
-  Output,
-  EventEmitter,
   ViewChild,
+  inject,
 } from '@angular/core';
-import {
-  trigger,
-  transition,
-  style,
-  animate,
-} from '@angular/animations';
-import { TimerComponent } from '../shared/components/timer/timer.component';
+import { ViewStateService } from '../services/view-state.service';
+import { slideAnimation, slideIn } from '../shared/animations/slide.animation';
+import { TimerService } from '../services/timer.service';
+import { AssistantData } from '../shared/models/view-state.model';
+import { DisplayQA, QAData } from '../shared/models/chat.model';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [TimerComponent],
+  imports: [],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-    animations: [
-    trigger('slideIn', [
-      transition(':enter', [
-        style({ transform: 'translateY(30px)', opacity: 0 }),
-        animate(
-          '400ms ease-out',
-          style({ transform: 'translateY(0)', opacity: 1 })
-        ),
-      ]),
-    ]),
-  ],
+  animations: [slideIn, slideAnimation],
 })
-export class ChatComponent implements AfterViewInit {
-  @Input() data!: Signal<any | null>;
-  @Input() isLoading!: Signal<boolean>;
-  @Output() timerDone = new EventEmitter();
-
+export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChildren('qaBlock') qaBlocks!: QueryList<ElementRef>;
   @ViewChild('chatContainer') chatContainer!: ElementRef;
 
-  questions = signal<any[]>([]);
-  currentIndex = signal(0);
-  displayedQA = signal<
-    {
-      question: string;
-      answer: string;
-      displayedAnswer: string;
-      charIndex: number;
-    }[]
-  >([]);
-  firstAnswerTyped = signal(false);
-  showTimer = signal(false);
+  readonly questions = signal<QAData[]>([]);
+  readonly currentIndex = signal(0);
+  readonly displayedQA = signal<DisplayQA[]>([]);
+  readonly firstAnswerTyped = signal(false);
 
-  private checkpointIndex = signal<number | null>(null);
+  private readonly checkpointIndex = signal<number | null>(null);
   private scrollHandler: (() => void) | null = null;
- 
-  ngOnInit(): void {
-    const value = this.data?.();
-    if (value && !this.isLoading()) {
-      this.questions.set(value.questions || []);
-      this.currentIndex.set(0);
-      this.displayedQA.set([]);
-      this.firstAnswerTyped.set(false);
+  private readonly viewStateService = inject(ViewStateService);
+  private readonly timerService = inject(TimerService);
 
-      if (this.questions().length > 0) {
-        this.displayNextQA();
-        this.checkpointIndex.set(this.questions().length - 1);
-      }
+  ngOnInit(): void {
+    const assistantData: AssistantData | null =
+      this.viewStateService.assistantData();
+    const questionsData = assistantData?.questions;
+
+    if (questionsData?.length) {
+      this.questions.set(questionsData);
+      this.checkpointIndex.set(questionsData.length - 1);
+      this.displayNextQA();
     }
   }
 
   ngAfterViewInit(): void {
-    this.qaBlocks.changes.subscribe(() => {
-      this.scrollToCurrentQA();
-    });
+    this.qaBlocks.changes.subscribe(() => this.scrollToCurrentQA());
     this.setupScrollListener();
-    
     queueMicrotask(() => this.scrollToCurrentQA());
   }
 
@@ -98,14 +69,14 @@ export class ChatComponent implements AfterViewInit {
 
   private setupScrollListener(): void {
     const container = this.chatContainer.nativeElement;
+
     this.scrollHandler = () => {
       const checkpointIdx = this.checkpointIndex();
       if (checkpointIdx === null) return;
 
-      const blocks = this.qaBlocks.toArray();
-      if (checkpointIdx >= blocks.length) return;
+      const checkpointBlock = this.qaBlocks.get(checkpointIdx)?.nativeElement;
+      if (!checkpointBlock) return;
 
-      const checkpointBlock = blocks[checkpointIdx].nativeElement;
       const checkpointTop = checkpointBlock.offsetTop;
       const containerTop = container.scrollTop;
 
@@ -113,90 +84,82 @@ export class ChatComponent implements AfterViewInit {
         container.scrollTop = checkpointTop;
       }
     };
+
     container.addEventListener('scroll', this.scrollHandler);
-  } 
+  }
 
-  displayNextQA(): void {
+  private displayNextQA(): void {
     const index = this.currentIndex();
-    const qs = this.questions();
-    if (index >= qs.length) return;
+    const questions = this.questions();
 
-    const nextQA = qs[index];
-    const newQA = {
-      question: nextQA.question,
-      answer: nextQA.answer,
+    if (index >= questions.length) return;
+
+    const questionData = questions[index];
+    const newQA: DisplayQA = {
+      id: index,
+      question: this.splitQuestion(questionData.question),
+      answer: questionData.answer,
       displayedAnswer: '',
       charIndex: 0,
     };
 
-    const showQA = () => {
-      this.displayedQA.update((prev) => [...prev, newQA]);
-      
-      setTimeout(() => {
-        this.typeAnswer(newQA, this.displayedQA().length - 1);
-      }, 800);
-    };
+    const delay = index === 0 ? 500 : 0;
 
-    if (index === 0) {
-      setTimeout(showQA, 1500);
-    } else {
-      showQA();
-    }
+    setTimeout(() => {
+      this.displayedQA.update((prev) => [...prev, newQA]);
+      setTimeout(() => this.typeAnswer(newQA), 800);
+    }, delay);
   }
 
-  typeAnswer(qa: any, qaIndex: number): void {
+  private splitQuestion(question: string): string[] {
+    return question.split('');
+  }
+
+  private typeAnswer(qa: DisplayQA): void {
     if (qa.charIndex < qa.answer.length) {
       qa.displayedAnswer += qa.answer[qa.charIndex++];
-      this.updateDisplayedQA(qaIndex, qa);
-
-      setTimeout(() => {
-        this.typeAnswer(qa, qaIndex);
-      }, 20);
+      this.updateDisplayedQA(qa);
+      setTimeout(() => this.typeAnswer(qa), 20);
     } else {
-      if (this.currentIndex() === 0) {
-        this.firstAnswerTyped.set(true);
-      }
-      this.currentIndex.update((v) => v + 1);
-      const nextIndex = this.currentIndex();
-      if (nextIndex < this.questions().length) {
-        setTimeout(() => {
-          this.displayNextQA();
-        }, 500);
-      } else {
-        this.showTimer.set(true);
-      }
+      this.onAnswerComplete();
     }
   }
 
-  private updateDisplayedQA(index: number, qa: any): void {
-    this.displayedQA.update((list) => {
-      const copy = [...list];
-      copy[index] = { ...qa };
-      return copy;
-    });
+  private onAnswerComplete(): void {
+    if (this.currentIndex() === 0) {
+      this.firstAnswerTyped.set(true);
+    }
+
+    this.currentIndex.update((v) => v + 1);
+    const nextIndex = this.currentIndex();
+
+    if (nextIndex < this.questions().length) {
+      setTimeout(() => this.displayNextQA(), 500);
+    } else {
+      this.timerService.show(10);
+    }
   }
 
-  onTimerCompleted(): void {
-    this.timerDone.emit();
+  private updateDisplayedQA(updatedQA: DisplayQA): void {
+    this.displayedQA.update((list) =>
+      list.map((qa) => (qa.id === updatedQA.id ? { ...updatedQA } : qa))
+    );
   }
 
-  scrollToCurrentQA(): void {
+  private scrollToCurrentQA(): void {
     const checkpointIdx = this.checkpointIndex();
     if (checkpointIdx === null) return;
 
-    const blocks = this.qaBlocks.toArray();
-    if (checkpointIdx >= blocks.length) return;
-
-    const checkpointBlock = blocks[checkpointIdx].nativeElement;
+    const checkpointBlock =
+      this.qaBlocks.toArray()[checkpointIdx]?.nativeElement;
+    if (!checkpointBlock) return;
 
     setTimeout(() => {
       const blockHeight = checkpointBlock.offsetHeight;
       const viewportHeight = window.innerHeight;
-      const extraMargin = viewportHeight - blockHeight;
+      const extraMargin = Math.max(0, viewportHeight - blockHeight);
 
-      checkpointBlock.style.marginBottom =
-        extraMargin > 0 ? `${extraMargin}px` : '0';
-
+      checkpointBlock.style.marginBottom = `${extraMargin}px`;
       checkpointBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   }

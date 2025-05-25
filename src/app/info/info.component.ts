@@ -1,106 +1,79 @@
 import {
   Component,
-  Input,
-  Output,
-  ViewChild,
-  EventEmitter,
-  Signal,
-  OnChanges,
-  SimpleChanges,
   signal,
   ChangeDetectionStrategy,
+  inject,
+  effect,
 } from '@angular/core';
-import { TimerComponent } from '../shared/components/timer/timer.component';
+import { ViewStateService } from '../services/view-state.service';
+import { TimerService } from '../services/timer.service'; 
 
 @Component({
   selector: 'app-info',
   standalone: true,
-  imports: [TimerComponent],
   templateUrl: './info.component.html',
   styleUrls: ['./info.component.css'],
+  animations: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InfoComponent implements OnChanges {
-  @Input() data!: Signal<any | null>;
-  @Input() isLoading!: Signal<boolean>;
-  @Output() timerDone = new EventEmitter<void>();
-  @ViewChild(TimerComponent) timerComponent!: TimerComponent;
-
-  readonly text = signal<string>('');
-  readonly displayedText = signal<string>('');
-  readonly headerImage = signal<string>('');
-  readonly showTimer = signal<boolean>(false);
-
+export class InfoComponent {
+  readonly text = signal('');
+  readonly displayedText = signal('');
+  readonly headerImage = signal('');
   readonly words = signal<string[]>([]);
-  readonly wordIndex = signal<number>(0);
-  readonly charIndex = signal<number>(0);
+  private typingInProgress = signal(false);
+  private timerTriggered = signal(false);
 
-  private typingInProgress = false;
+  private readonly viewStateService = inject(ViewStateService);
+  private readonly timerService = inject(TimerService);
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['data'] || changes['isLoading']) {
-      const value = this.data?.();
-      if (value && !this.isLoading()) {
-        this.text.set(value.header.replace(/\n/g, ' '));
+  constructor() {
+    effect(() => {
+      const value = this.viewStateService.assistantData();
+      if (value && !this.typingInProgress()) {
+        this.text.set(value.header?.replace(/\n/g, ' ') ?? '');
         this.words.set(value.headerAnimated ?? []);
         this.headerImage.set(value.headerImage ?? '');
-        this.showTimer.set(false);
-        this.wordIndex.set(0);
-        this.charIndex.set(0);
         this.displayedText.set('');
-        this.startTypingSequence();
+        this.timerTriggered.set(false);
+        this.startTyping();
       }
-    }
+    });
   }
 
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private async startTypingSequence(): Promise<void> {
-    if (this.typingInProgress) return;
-    this.typingInProgress = true;
+  private async startTyping(): Promise<void> {
+    if (this.typingInProgress()) return;
+    this.typingInProgress.set(true);
 
     const words = this.words();
     if (!words.length) {
-      this.typingInProgress = false;
-      this.showTimer.set(true);
+      this.timerService.show(10);
+      this.typingInProgress.set(false);
       return;
     }
-
     while (true) {
-      const currentWord = words[this.wordIndex()];
-      // Type word
-      for (let i = 0; i < currentWord.length; i++) {
-        this.displayedText.set(this.displayedText() + currentWord[i]);
-        this.charIndex.set(i + 1);
-        await this.delay(100);
+      for (const word of words) {
+        for (let j = 0; j <= word.length; j++) {
+          this.displayedText.set(word.slice(0, j));
+          await this.delay(100);
+        }
+        await this.delay(1500);
+        // Delete word
+        for (let j = word.length; j >= 0; j--) {
+          this.displayedText.set(word.slice(0, j));
+          await this.delay(50);
+        }
+        await this.delay(300);
       }
-      // Wait before deleting
-      await this.delay(1500);
-      // Delete word
-      while (this.displayedText().length > 0) {
-        this.displayedText.set(this.displayedText().slice(0, -1));
-        this.charIndex.set(this.charIndex() - 1);
-        await this.delay(50);
-      }
-      // Move to next word
-      const nextIndex = this.wordIndex() + 1;
-      this.wordIndex.set(nextIndex >= words.length ? 0 : nextIndex);
 
-      // Show timer after all words done once
-      if (!this.showTimer() && nextIndex >= words.length) {
-        this.showTimer.set(true);
+      if (!this.timerTriggered()) {
+        this.timerTriggered.set(true);
+        this.timerService.show(10);
       }
-      await this.delay(300);
     }
-  }
-
-  onTimerComplete(): void {
-    this.timerDone.emit();
-  }
-
-  restartTimer(): void {
-    this.timerComponent?.restartTimer();
   }
 }

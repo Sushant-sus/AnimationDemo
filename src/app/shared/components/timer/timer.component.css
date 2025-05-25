@@ -41,7 +41,7 @@
   stroke: #ffffff;
   stroke-linecap: round;
   transform-origin: center;
-  transition: stroke-dashoffset 0.1s linear;
+  transition: stroke-dashoffset 0.2s linear;
 }
 
 .countdown-number {

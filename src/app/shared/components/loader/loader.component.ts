@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   standalone: true,
   imports: [],
   templateUrl: './loader.component.html',
-  styleUrl: './loader.component.css',
+  styleUrls: ['./loader.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoaderComponent {

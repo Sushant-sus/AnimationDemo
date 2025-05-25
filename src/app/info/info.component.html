@@ -1,12 +1,10 @@
-<div class="wrapper relative">
+<div class="wrapper">
   <div class="container">
-    <div class="w-full flex items-start mb-4">
-      <img
-        [src]="headerImage()"
-        alt="Header Logo"
-        class="w-[70px] h-[60px] sm:w-[70px] sm:h-[60px] md:w-[80px] md:h-[70px] lg:w-[100px] lg:h-[90px]"
-      />
-    </div>
+    <img
+      [src]="headerImage()"
+      alt="Header Logo"
+      class="header-image"
+    />
     <div class="content">
       <h1 class="header-text">
         <span [innerHTML]="text()"></span>
@@ -19,11 +17,4 @@
       </h1>
     </div>
   </div>
-
-  @if (showTimer()) {
-  <app-timer
-    class="fixed bottom-4 right-4 w-[40px] h-[40px] z-50"
-    (timerCompleted)="onTimerComplete()"
-  />
-  }
 </div>

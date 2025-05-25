@@ -1,12 +1,12 @@
 <div class="chat-wrapper">
   <div class="chat-container" #chatContainer>
-    @for (qa of displayedQA(); track qa.question) {
+    @for (qa of displayedQA(); track qa.id) {
     <div #qaBlock class="qa-block" @slideIn>
       <div class="question-box">
         <p>
           <span class="split-container">
-            @for (item of qa.question; track item) {
-            <span class="">{{ item }}</span>
+            @for (word of qa.question; track $index) {
+            <span class="word-span">{{ word }}</span>
             }
           </span>
         </p>
@@ -16,11 +16,6 @@
         <span class="answer-text">{{ qa.displayedAnswer }}</span>
       </div>
     </div>
-    } @if (showTimer()) {
-    <app-timer
-      class="fixed bottom-4 right-4 w-[40px] h-[40px] z-50"
-      (timerCompleted)="onTimerCompleted()"
-    />
-    }
+    }  
   </div>
 </div>

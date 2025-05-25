@@ -4,7 +4,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #ff0000; /* Red background */
+  background: linear-gradient(180deg,var(--primary-color) 0%,color-mix(in srgb,var(--primary-color) 80%,black)100%);
   display: flex;
   justify-content: center;
   align-items: center;
