@@ -93,7 +93,7 @@ export class TimerComponent {
   dashoffset = signal(0); 
   private timerInterval: any;
 
-  @Output() timerCompleted = new EventEmitter<void>(); 
+  @Output() timerCompleted = new EventEmitter<void>();  // remove this and use new one
 
   constructor() {
     

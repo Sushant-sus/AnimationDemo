@@ -4,9 +4,10 @@ import {
   ChangeDetectionStrategy,
   inject,
   effect,
+  Input,
 } from '@angular/core';
-import { ViewStateService } from '../services/view-state.service';
-import { TimerService } from '../services/timer.service'; 
+import { TimerService } from '../services/timer.service';
+import { AssistantData } from '../shared/models/view-state.model';
 
 @Component({
   selector: 'app-info',
@@ -17,25 +18,34 @@ import { TimerService } from '../services/timer.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InfoComponent {
-  readonly text = signal('');
-  readonly displayedText = signal('');
-  readonly headerImage = signal('');
-  readonly words = signal<string[]>([]);
-  private typingInProgress = signal(false);
-  private timerTriggered = signal(false);
-
-  private readonly viewStateService = inject(ViewStateService);
+  @Input() assistantData: AssistantData | null = null;
   private readonly timerService = inject(TimerService);
+  private readonly timeDuration = 1;
+
+  protected readonly state = signal({
+    headerImage: '',
+    headerText: '',
+    words: [] as string[],
+  });
+
+  readonly displayedText = signal('');
+  private readonly typingInProgress = signal(false);
+  private readonly timerTriggered = signal(false);
 
   constructor() {
     effect(() => {
-      const value = this.viewStateService.assistantData();
-      if (value && !this.typingInProgress()) {
-        this.text.set(value.header?.replace(/\n/g, ' ') ?? '');
-        this.words.set(value.headerAnimated ?? []);
-        this.headerImage.set(value.headerImage ?? '');
+      const data = this.assistantData;
+      if (data && !this.typingInProgress()) {
+        this.state.set({
+          headerImage: data.headerImage ?? '',
+          headerText: data.header?.replace(/\n/g, ' ') ?? '',
+          words: data.headerAnimated ?? [],
+        });
+
         this.displayedText.set('');
+        this.typingInProgress.set(false);
         this.timerTriggered.set(false);
+
         this.startTyping();
       }
     });
@@ -47,33 +57,38 @@ export class InfoComponent {
 
   private async startTyping(): Promise<void> {
     if (this.typingInProgress()) return;
-    this.typingInProgress.set(true);
 
-    const words = this.words();
+    this.typingInProgress.set(true);
+    const words = this.state().words;
+
     if (!words.length) {
-      this.timerService.show(10);
+      this.timerService.show(this.timeDuration);
       this.typingInProgress.set(false);
       return;
     }
+
     while (true) {
       for (const word of words) {
         for (let j = 0; j <= word.length; j++) {
           this.displayedText.set(word.slice(0, j));
           await this.delay(100);
         }
+
         await this.delay(1500);
-        // Delete word
+
         for (let j = word.length; j >= 0; j--) {
           this.displayedText.set(word.slice(0, j));
           await this.delay(50);
         }
+
         await this.delay(300);
       }
 
       if (!this.timerTriggered()) {
+        this.timerService.show(this.timeDuration);
         this.timerTriggered.set(true);
-        this.timerService.show(10);
       }
     }
   }
 }
+

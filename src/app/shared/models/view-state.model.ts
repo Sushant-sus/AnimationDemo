@@ -12,3 +12,4 @@ export interface AssistantData {
 export interface AnimatableViewComponent {
   animationState: 'enter' | 'leave';
 }
+

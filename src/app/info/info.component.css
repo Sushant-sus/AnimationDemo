@@ -1,11 +1,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2&display=swap");
 
 :host {
-  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
   height: 100vh;
-  overflow: hidden;
+  display: block;
   font-family: "Baloo Bhaijaan 2", sans-serif;
-  text-size-adjust: 100%;
 }
 
 .wrapper {
@@ -14,7 +16,7 @@
   left: 0;
   display: flex;
   align-items: center;
-  scrollbar-gutter: stable;
+  /* scrollbar-gutter: stable; */
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -28,7 +30,7 @@
 
 .container {
   width: 100%;
-  max-width: 1300px;
+  /* max-width: 1300px; */
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -52,8 +54,6 @@
   line-height: 1;
   word-break: break-word;
   -webkit-text-stroke: 1px rgb(255, 231, 71);
-  letter-spacing: 1.5px;
-  word-spacing: 4px;
   vertical-align: middle;
 }
 
@@ -67,7 +67,7 @@
 
 .cursor {
   animation: blink 1s steps(2, start) infinite;
-  color: --secondary-color;
+  color: var(--secondary-color);
   font-size: calc(85px + 55 * (100vw - 1024px) / 896);
 }
 
@@ -81,14 +81,4 @@
   75% {
     opacity: 0;
   }
-}
-
-/* Timer button */
-app-timer {
-  position: fixed !important;
-  bottom: 16px;
-  right: 16px;
-  width: 40px;
-  height: 40px;
-  z-index: 50;
 }

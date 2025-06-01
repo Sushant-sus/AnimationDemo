@@ -1,21 +1,18 @@
 <div class="chat-wrapper">
   <div class="chat-container" #chatContainer>
     @for (qa of displayedQA(); track qa.id) {
-    <div #qaBlock class="qa-block" @slideIn>
+    <div #qaBlock class="qa-block pop-in">
       <div class="question-box">
         <p>
-          <span class="split-container">
-            @for (word of qa.question; track $index) {
-            <span class="word-span">{{ word }}</span>
-            }
-          </span>
+          {{ qa.question }}
         </p>
       </div>
       <div class="answer-container">
-        <span class="chat-icon"><i class="fas fa-comment-dots"></i></span>
+        <span class="chat-icon">
+        </span>
         <span class="answer-text">{{ qa.displayedAnswer }}</span>
       </div>
     </div>
-    }  
+    }
   </div>
 </div>

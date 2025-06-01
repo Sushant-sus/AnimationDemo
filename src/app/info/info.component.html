@@ -1,13 +1,13 @@
 <div class="wrapper">
   <div class="container">
     <img
-      [src]="headerImage()"
+      [src]="state().headerImage"
       alt="Header Logo"
       class="header-image"
     />
     <div class="content">
       <h1 class="header-text">
-        <span [innerHTML]="text()"></span>
+        <span [innerHTML]="state().headerText"></span>
       </h1>
 
       <h1 class="header-text">

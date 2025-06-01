@@ -12,13 +12,15 @@ export class ApiService {
   private readonly http = inject(HttpClient);
 
   // Use signal to store cached observable
-  private readonly cachedData$ = signal<Observable<AssistantData> | null>(null);
+  // private readonly cachedData$ = signal<Observable<AssistantData> | null>(null);
+  private cachedData$: Observable<AssistantData> | null = null;
 
   getAssistantData(): Observable<AssistantData> {
-    if (!this.cachedData$()) {
-      const obs$ = this.http.get<AssistantData>(this.apiUrl).pipe(shareReplay(1));
-      this.cachedData$.set(obs$);
+    if (!this.cachedData$) {
+      this.cachedData$ = this.http
+        .get<AssistantData>(this.apiUrl)
+        .pipe(shareReplay(1));
     }
-    return this.cachedData$()!;
+    return this.cachedData$!;
   }
 }

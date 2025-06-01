@@ -3,19 +3,20 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-} 
-
-app-info,
-app-chat {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    var(--primary-color) 0%,
+    color-mix(in srgb, var(--primary-color) 80%, black) 100%
+  );
 }
 
-app-chat {
-  z-index: 2;
+.slide-in-right {
+  transform: translateX(100%);
+  animation: slideFromRight 0.3s ease-in-out forwards;
 }
 
+@keyframes slideFromRight {
+  to {
+    transform: translateX(0);
+  }
+}
